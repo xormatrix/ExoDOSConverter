@@ -432,6 +432,7 @@ def fullnameToGameDir(collectionDir, scriptDir, collectionVersion, logger):
             # Resolve the actual (correctly-cased) game directory name from the 'gamedir' stored in 'collectFile'.
             # New versions of a collection may change the case of a game directory, this solves that issue.
             gamedir_actual = getActualFilesystemFilename(gamedir, cached_listdir=gamedirs_actual)
+            gamedirs_actual.remove(gamedir_actual) # Searching gets progressively faster, this speeds up the startup time greatly
             gameDict[fullname] = gamedir_actual
         except FileNotFoundError: # Could not find the game directory in the collection, ignore it and do not list it in the GUI
             pass # The game directory does not exist (may be due to a new version of the collection, etc)
