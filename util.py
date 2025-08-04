@@ -423,9 +423,20 @@ def fullnameToGameDir(collectionDir, scriptDir, collectionVersion, logger):
 
     gameDict = dict()
     collectFile = open(collectionCSVCachePath, 'r', encoding='utf-8')
+    collectionGamesConfDir = getCollectionGamesConfDir(collectionDir, collectionVersion)
+    gamedirs_actual = os.listdir(collectionGamesConfDir)
     for line in collectFile.readlines():
-        strings = line.split(';')
-        gameDict[strings[0]] = strings[1].rstrip('\n\r')
+        fullname, gamedir = line.split(';')
+        gamedir = gamedir.rstrip('\n\r')
+        try:
+            # Resolve the actual (correctly-cased) game directory name from the 'gamedir' stored in 'collectFile'.
+            # New versions of a collection may change the case of a game directory, this solves that issue.
+            gamedir_actual = getActualFilesystemFilename(gamedir, cached_listdir=gamedirs_actual)
+            gameDict[fullname] = gamedir_actual
+        except FileNotFoundError: # Could not find the game directory in the collection, ignore it and do not list it in the GUI
+            pass # The game directory does not exist (may be due to a new version of the collection, etc)
+            #logger.log("  <INFO> Game %s (%s) not found in the collection config directory %s"
+            #           % (fullname, gamedir, collectionGamesConfDir), logger.INFO)
     return gameDict
 
 
