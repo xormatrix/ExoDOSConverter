@@ -285,17 +285,29 @@ def loadUIStrings(scriptDir, guiStringsFile):
     return guiStrings
 
 
-def getActualFilesystemFilename(filename_case_insensitive, directory=os.curdir):
+def getActualFilesystemFilename(filename_case_insensitive, directory=os.curdir, cached_listdir=None):
     """
     In 'directory', get the actual filename that exists in the filesystem
     from a case-insensitive filename ('filename_case_insensitive').
     Works for resolving directories as well.
+
+    Search through a given list of filenames if 'cached_listdir' is given.
+    This is useful if you need to use getActualFilesystemFilename()
+    multiple times in a single directory, using 'cached_listdir' then
+    avoids excessive filesystem access operations.
     """
-    files_case_sensitive = os.listdir(directory)
-    for file_case_sensitive in files_case_sensitive:
-        if file_case_sensitive.lower() == filename_case_insensitive.lower():
-            actual_filename = file_case_sensitive
-            return actual_filename
+    if cached_listdir:
+        for filename_case_sensitive in cached_listdir:
+            if filename_case_sensitive.lower() == filename_case_insensitive.lower():
+                actual_filename = filename_case_sensitive
+                return actual_filename
+    else:
+        with os.scandir(directory) as files_case_sensitive:
+            for entry in files_case_sensitive:
+                filename_case_sensitive = entry.name
+                if filename_case_sensitive.lower() == filename_case_insensitive.lower():
+                    actual_filename = filename_case_sensitive
+                    return actual_filename
     raise FileNotFoundError(errno.ENOENT,
                             os.strerror(errno.ENOENT) + " (last part is case-insensitive)",
                             str(PurePath(directory) / filename_case_insensitive))
